@@ -5,7 +5,7 @@ package.domain = com.marvis
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 version = 1.0.0
-requirements = python3,kivy==2.3.0,kivymd==1.2.0,rapidocr-onnxruntime,onnxruntime,Pillow,numpy==1.26.4,opencv
+requirements = python3,kivy==2.3.0,kivymd==1.2.0,rapidocr-onnxruntime,onnxruntime,Pillow,numpy,opencv
 orientation = portrait
 fullscreen = 1
 
@@ -25,3 +25,6 @@ android.logcat_filters = *:S python:D
 [buildozer]
 log_level = 2
 warn_on_root = 1
+
+[p4a]
+branch = develop
