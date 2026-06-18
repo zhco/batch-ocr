@@ -14,6 +14,7 @@ android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERN
 
 android.api = 34
 android.minapi = 24
+android.accept_sdk_license = True
 android.ndk = 25c
 android.sdk = 34
 android.arch = armeabi-v7a
