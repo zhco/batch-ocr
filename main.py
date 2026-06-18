@@ -1,6 +1,7 @@
 """
-批量文字识别 - 逐页 OCR，保存到本地 txt
-框架：KivyMD + Tesseract
+批量文字识别 - PaddleOCR 离线引擎
+框架：KivyMD + RapidOCR (ONNX Runtime)
+模型：ch_PP-OCRv4，约 8MB，离线可用
 """
 
 import os
@@ -24,7 +25,7 @@ ScreenManager:
     name: "main"
     MDTopAppBar:
         id: toolbar
-        title: "批量OCR"
+        title: "批量OCR(Paddle)"
         pos_hint: {"top": 1}
         right_action_items: [["folder", lambda x: app.select_dir()]]
 
@@ -80,7 +81,8 @@ class BatchOCRApp(MDApp):
         super().__init__(**kwargs)
         self.current_dir = ""
         self.image_files = []
-        self._ocr_lock = threading.Lock()
+        self.engine = None
+        self._lock = threading.Lock()
 
     def build(self):
         self.theme_cls.primary_palette = "Indigo"
@@ -159,29 +161,33 @@ class BatchOCRApp(MDApp):
             target=self._run_ocr, args=(output_dir,), daemon=True
         ).start()
 
-    def _run_ocr(self, output_dir):
-        with self._ocr_lock:
-            try:
-                import pytesseract
-                from PIL import Image
-            except Exception as e:
-                Clock.schedule_once(
-                    lambda dt: self.show_dialog(f"依赖缺失:\n{e}")
-                )
-                Clock.schedule_once(lambda dt: self._enable_button())
-                return
+    def _init_engine(self):
+        """初始化 RapidOCR 引擎（首次加载模型约 2-3 秒）"""
+        from rapidocr_onnxruntime import RapidOCR
+        self.engine = RapidOCR(
+            text_score=0.5,
+            det_use_cuda=False,
+            cls_use_cuda=False,
+            rec_use_cuda=False,
+        )
 
-            # 自动查找 tesseract 路径 (Android)
-            import shutil
-            tess_cmd = shutil.which("tesseract")
-            if not tess_cmd:
-                for p in [
-                    "/data/data/com.marvis.batchocr/files/app/bin/tesseract",
-                    "/data/data/com.marvis.batchocr/files/app/tesseract/bin/tesseract",
-                ]:
-                    if os.path.exists(p):
-                        pytesseract.pytesseract.tesseract_cmd = p
-                        break
+    def _run_ocr(self, output_dir):
+        with self._lock:
+            if self.engine is None:
+                Clock.schedule_once(
+                    lambda dt: self._update_status("正在加载 PaddleOCR 模型...")
+                )
+                try:
+                    self._init_engine()
+                except Exception as e:
+                    Clock.schedule_once(
+                        lambda dt: self.show_dialog(
+                            f"引擎加载失败:\n{e}\n\n"
+                            "请确认已安装:\npip install rapidocr-onnxruntime"
+                        )
+                    )
+                    Clock.schedule_once(lambda dt: self._enable_button())
+                    return
 
             total = len(self.image_files)
             success = 0
@@ -193,13 +199,20 @@ class BatchOCRApp(MDApp):
                 )
 
                 try:
-                    img = Image.open(img_path)
-                    text = pytesseract.image_to_string(img, lang="chi_sim+eng")
+                    result, _ = self.engine(img_path)
 
                     txt_name = Path(img_path).stem + ".txt"
                     txt_path = os.path.join(output_dir, txt_name)
+
+                    if result:
+                        lines = [item[1] for item in result if item[1]]
+                        text = "\n".join(lines)
+                    else:
+                        text = ""
+
                     with open(txt_path, "w", encoding="utf-8") as f:
-                        f.write(text.strip())
+                        f.write(text)
+
                     success += 1
                 except Exception:
                     continue
@@ -211,7 +224,7 @@ class BatchOCRApp(MDApp):
             )
             Clock.schedule_once(
                 lambda dt: self._update_status(
-                    f"完成！成功 {success}/{total}\n结果保存: {output_dir}"
+                    f"完成！成功 {success}/{total}\n结果: {output_dir}"
                 )
             )
             Clock.schedule_once(lambda dt: self._enable_button())
