@@ -1,46 +1,17 @@
 name: Build APK
-
-on:
-  push:
-    branches: [main, master]
-  workflow_dispatch:   # 支持手动触发
-
+on: push
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
-          python-version: "3.10"
-
-      - name: Install Buildozer Dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            python3-pip python3-setuptools python3-venv \
-            openjdk-17-jdk autoconf automake libtool \
-            libffi-dev libssl-dev zlib1g-dev libltdl-dev \
-            cmake unzip zip git wget libncurses-dev ccache
-
-      - name: Cache Buildozer
-        uses: actions/cache@v4
-        with:
-          path: .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: ${{ runner.os }}-buildozer-
-
-      - name: Build APK
-        run: |
-          pip install buildozer cython
-          yes | buildozer android debug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+          flutter-version: '3.27.4'
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
         with:
           name: batch-ocr-apk
-          path: bin/*.apk
-          retention-days: 30
+          path: build/app/outputs/flutter-apk/app-release.apk
