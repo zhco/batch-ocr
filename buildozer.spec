@@ -5,7 +5,7 @@ package.domain = com.marvis
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 version = 1.0.0
-requirements = python3,kivy==2.3.0,kivymd==1.2.0,pytesseract,Pillow,tesseract
+requirements = python3,kivy==2.3.0,kivymd==1.2.0,rapidocr-onnxruntime,onnxruntime,Pillow,numpy,opencv-python
 orientation = portrait
 fullscreen = 1
 
