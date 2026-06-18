@@ -5,7 +5,7 @@ package.domain = com.marvis
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 version = 1.0.0
-requirements = python3,kivy==2.3.0,kivymd==1.2.0,rapidocr-onnxruntime,onnxruntime,Pillow,numpy,opencv
+requirements = python3,kivy==2.3.0,kivymd==1.2.0,rapidocr-onnxruntime,onnxruntime,Pillow,numpy<2,opencv
 orientation = portrait
 fullscreen = 1
 
@@ -15,7 +15,7 @@ android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERN
 android.api = 34
 android.minapi = 24
 android.accept_sdk_license = True
-android.ndk = 25c
+android.ndk = 27c
 android.sdk = 34
 android.arch = armeabi-v7a
 android.allow_backup = True
